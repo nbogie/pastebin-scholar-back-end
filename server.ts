@@ -20,27 +20,35 @@ const dbConfig = {
 
 const app = express();
 
-app.use(express.json()); //add body parser to each following route handler
+app.use(express.json()); //add body parser to each following route handler and allows us to have access to request.body
 app.use(cors()) //add CORS support to each following route handler
 
 const client = new Client(dbConfig);
 client.connect();
 
-app.get("/", async (req, res) => {
-  const dbres = await client.query('select * from pastebin');
-  res.json(dbres.rows);
-});
 
-app.post("/paste", async (req, res) => {
+
+app.get("/pastes", async (req, res) => {
   try {
-   
-     const {title, summary} = req.body;
-     const newEntry = await client.query('insert into pastebin (title_text, summary_text ) VALUES($1,$2)',[title, summary])
-    // res.json(newEntry)
+    const allPastes = await client.query('select * from pastebin');
+    res.json(allPastes.rows);
   } catch (error) {
     console.error(error.message)
   }
 });
+
+app.post("/pastes", async (req, res) => {
+
+  try {
+     const {title, summary} = req.body//req.body has information from the client side;
+     const newEntry = await client.query('insert into pastebin (title_text, summary_text ) values($1,$2) returning *',[title, summary])
+    res.json(newEntry.rows[0])
+  } catch (error) {
+    console.error(error.message)
+  }
+});
+
+
 
 
 
