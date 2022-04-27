@@ -27,9 +27,22 @@ const client = new Client(dbConfig);
 client.connect();
 
 app.get("/", async (req, res) => {
-  const dbres = await client.query('select * from categories');
+  const dbres = await client.query('select * from pastebin');
   res.json(dbres.rows);
 });
+
+app.post("/paste", async (req, res) => {
+  try {
+   
+     const {title, summary} = req.body;
+     const newEntry = await client.query('insert into pastebin (title_text, summary_text ) VALUES($1,$2)',[title, summary])
+    // res.json(newEntry)
+  } catch (error) {
+    console.error(error.message)
+  }
+});
+
+
 
 
 //Start the server on the given port
