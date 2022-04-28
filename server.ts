@@ -3,6 +3,7 @@ import { config } from "dotenv";
 import express from "express";
 import cors from "cors";
 
+
 config(); //Read .env file lines as though they were env vars.
 
 //Call this script with the environment variable LOCAL set if you want to connect to a local db (i.e. without SSL)
@@ -26,7 +27,7 @@ app.use(cors()) //add CORS support to each following route handler
 const client = new Client(dbConfig);
 client.connect();
 
-app.get("/tenPastes", async (req, res) => {
+app.get("/pastes/tenPastes", async (req, res) => {
   try {
     const allPastes = await client.query('select * from pastebin order by time desc limit 10');
     res.json(allPastes.rows);
@@ -44,6 +45,15 @@ app.get("/pastes", async (req, res) => {
   }
 });
 
+app.get('/pastes/:id',(req,res)=>{  
+  client.query('SELECT * FROM pastebin WHERE entry_id = $1',[req.params.id],(err,rows)=>{  
+  if(!err)   
+  res.send(rows.rows);  
+  else  
+      console.log(err);  
+})  
+});  
+
 app.post("/pastes", async (req, res) => {
 
   try {
@@ -54,11 +64,6 @@ app.post("/pastes", async (req, res) => {
     console.error(error.message)
   }
 });
-
-
-
-
-
 
 //Start the server on the given port
 const port = process.env.PORT;
