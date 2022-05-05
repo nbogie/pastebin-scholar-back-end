@@ -3,6 +3,7 @@ import { config } from "dotenv";
 import express from "express";
 import cors from "cors";
 
+
 config(); //Read .env file lines as though they were env vars.
 
 //Call this script with the environment variable LOCAL set if you want to connect to a local db (i.e. without SSL)
@@ -20,17 +21,49 @@ const dbConfig = {
 
 const app = express();
 
-app.use(express.json()); //add body parser to each following route handler
+app.use(express.json()); //add body parser to each following route handler and allows us to have access to request.body
 app.use(cors()) //add CORS support to each following route handler
 
 const client = new Client(dbConfig);
 client.connect();
 
-app.get("/", async (req, res) => {
-  const dbres = await client.query('select * from categories');
-  res.json(dbres.rows);
+app.get("/pastes/tenPastes", async (req, res) => {
+  try {
+    const allPastes = await client.query('select * from pastebin order by time desc limit 10');
+    res.json(allPastes.rows);
+  } catch (error) {
+    console.error(error.message)
+  }
 });
 
+app.get("/pastes", async (req, res) => {
+  try {
+    const allPastes = await client.query('select * from pastebin');
+    res.json(allPastes.rows);
+  } catch (error) {
+    console.error(error.message)
+  }
+});
+
+app.get('/pastes/:id',(req,res)=>{  
+  client.query('SELECT * FROM pastebin WHERE entry_id = $1',[req.params.id],(err,rows)=>{  
+  if(!err)   
+  res.send(rows.rows);  
+  else  
+      console.log(err);  
+})  
+});  
+
+app.post("/pastes", async (req, res) => {
+
+  try {
+     const {title, summary} = req.body//req.body has information from the client side;
+     const newEntry = await client.query('insert into pastebin (title_text, summary_text ) values($1,$2) returning *',[title, summary])
+    res.json(newEntry.rows[0])
+  } catch (error) {
+    console.error(error.message)
+  }
+});
 
 //Start the server on the given port
 const port = process.env.PORT;
